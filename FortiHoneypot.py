@@ -15,7 +15,7 @@ import urllib.parse
 struggle_check = False
 
 
-class CitrixHandler(server.SimpleHTTPRequestHandler):
+class FortiHoneypot(server.SimpleHTTPRequestHandler):
     page_cache = {'403.html': '', 'login.html': '', 'smb.conf': '', 'gold_star.html': ''}
 
     def __init__(self, args, directory, kwargs):
@@ -125,10 +125,21 @@ class CitrixHandler(server.SimpleHTTPRequestHandler):
     # overload base class's send_response() to set appropriate headers and server version
     def send_response(self, page, code=200, msg='OK'):
         self.wfile.write("HTTP/1.1 {} {}\r\n".format(code, msg).encode('utf-8'))
-        self.send_header("Server", "Apache")
+        self.send_header("ETag", "83-65badf00")
+        self.send_header("Accept-Ranges", "bytes")
         self.send_header("Content-Length", len(page))
         self.send_header("Content-type", "text/html")
-        self.send_header("Connection", "Close")
+        self.send_header("X-frame-Options", "SAMEORIGIN")
+        self.send_header("Content-Security-Policy", "frame-ancestors 'self'; object-src 'self'; script-src 'self' https:  'unsafe-eval' 'unsafe-inline' blob:;")
+        self.send_header("X-XSS-Protection", "1; mode=block")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Strict-Transport-Security", "max-age=31536000")
+        
+        self.send_header("Fortinet")
+        self.send_header("Device", "FortiGate-100F")
+        self.send_header("Model", "FG100F")
+        self.send_header("Serial Number", "FG100FTK20036450")
+        
         self.end_headers()
 
         if page != '':
@@ -146,9 +157,9 @@ if __name__ == '__main__':
     root.addHandler(handler1)
     root.addHandler(handler2)
 
-logging.log(logging.INFO, 'Citrix CVE-2019-19781 Honeypot by MalwareTech')
+logging.log(logging.INFO, 'FortiHoneypot')
 
-httpd = server.HTTPServer(('0.0.0.0', 443), CitrixHandler)
+httpd = server.HTTPServer(('0.0.0.0', 443), FortiHoneypot)
 httpd.socket = ssl.wrap_socket(httpd.socket,
                                certfile='ssl/cert.pem',
                                keyfile='ssl/key.pem',
